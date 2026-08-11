@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZPass</title>
+    <!-- 启动时锁屏页为深色渐变，提前设置背景避免白屏闪烁；
+         #app 的深色背景由 App.vue 中 .shell 的 var(--bg) 在挂载后接管 -->
+    <style>
+      html,
+      body,
+      #app {
+        margin: 0;
+        background-color: #1f2937;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
