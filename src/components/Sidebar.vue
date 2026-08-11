@@ -2,17 +2,7 @@
 import { computed, h } from "vue";
 import { useAppStore } from "../stores/app";
 import { NIcon, NDropdown, useMessage } from "naive-ui";
-import {
-  ListOutline,
-  TrashOutline,
-  KeyOutline,
-  AlbumsOutline,
-  EllipsisVerticalOutline,
-  AddOutline,
-  CreateOutline,
-  TrashOutline as TrashIcon,
-} from "@vicons/ionicons5";
-import { templateIcon } from "../utils/templateIcons";
+import { templateIcon, uiIcon } from "../utils/templateIcons";
 import type { Category } from "../types";
 
 const props = defineProps<{
@@ -32,6 +22,14 @@ const emit = defineEmits<{
 
 const store = useAppStore();
 const message = useMessage();
+
+const ListIcon = uiIcon("list");
+const TrashIcon = uiIcon("trash");
+const KeyIcon = uiIcon("key");
+const AlbumsIcon = uiIcon("albums");
+const EllipsisIcon = uiIcon("ellipsis-vertical");
+const AddIcon = uiIcon("add");
+const CreateIcon = uiIcon("create");
 
 const total = computed(() => store.activeEntries.length);
 const trashCount = computed(() => store.trashedEntries.length);
@@ -55,12 +53,12 @@ const catMenu = () => [
   {
     label: "新建子类",
     key: "add-child",
-    icon: () => h(NIcon, null, { default: () => h(AddOutline) }),
+    icon: () => h(NIcon, null, { default: () => h(AddIcon) }),
   },
   {
     label: "编辑",
     key: "edit",
-    icon: () => h(NIcon, null, { default: () => h(CreateOutline) }),
+    icon: () => h(NIcon, null, { default: () => h(CreateIcon) }),
   },
   {
     label: "删除",
@@ -93,7 +91,7 @@ const tagMenu = () => [
   {
     label: "编辑",
     key: "edit",
-    icon: () => h(NIcon, null, { default: () => h(CreateOutline) }),
+    icon: () => h(NIcon, null, { default: () => h(CreateIcon) }),
   },
   {
     label: "删除",
@@ -131,7 +129,7 @@ async function removeTag(tag: { id: string; name: string }) {
         :class="{ active: view === 'all' && !filterCategory && !filterTag }"
         @click="emit('view', 'all')"
       >
-        <n-icon :size="16"><ListOutline /></n-icon>
+        <n-icon :size="16"><ListIcon /></n-icon>
         <span class="label">全部条目</span>
         <span class="count">{{ total }}</span>
       </div>
@@ -139,7 +137,7 @@ async function removeTag(tag: { id: string; name: string }) {
       <div class="group-title">
         类别
         <span class="group-add" @click="emit('createcategory', null)">
-          <n-icon :size="14"><AddOutline /></n-icon>
+          <n-icon :size="14"><AddIcon /></n-icon>
         </span>
       </div>
 
@@ -164,7 +162,7 @@ async function removeTag(tag: { id: string; name: string }) {
             @select="(k) => onCatMenu(k, cat)"
           >
             <button type="button" class="cat-more" @click.stop>
-              <n-icon :size="14"><EllipsisVerticalOutline /></n-icon>
+              <n-icon :size="14"><EllipsisIcon /></n-icon>
             </button>
           </n-dropdown>
         </div>
@@ -187,7 +185,7 @@ async function removeTag(tag: { id: string; name: string }) {
             @select="(k) => onCatMenu(k, child)"
           >
             <button type="button" class="cat-more" @click.stop>
-              <n-icon :size="14"><EllipsisVerticalOutline /></n-icon>
+              <n-icon :size="14"><EllipsisIcon /></n-icon>
             </button>
           </n-dropdown>
         </div>
@@ -199,7 +197,7 @@ async function removeTag(tag: { id: string; name: string }) {
       <div class="group-title">
         标签
         <span class="group-add" @click="emit('createtag')">
-          <n-icon :size="14"><AddOutline /></n-icon>
+          <n-icon :size="14"><AddIcon /></n-icon>
         </span>
       </div>
       <div v-if="store.tagStats.length === 0" class="empty-tip">暂无标签</div>
@@ -219,7 +217,7 @@ async function removeTag(tag: { id: string; name: string }) {
           @select="(k) => onTagMenu(k, t)"
         >
           <button type="button" class="cat-more" @click.stop>
-            <n-icon :size="14"><EllipsisVerticalOutline /></n-icon>
+            <n-icon :size="14"><EllipsisIcon /></n-icon>
           </button>
         </n-dropdown>
       </div>
@@ -232,7 +230,7 @@ async function removeTag(tag: { id: string; name: string }) {
         :class="{ active: view === 'otp' }"
         @click="emit('view', 'otp')"
       >
-        <n-icon :size="16"><KeyOutline /></n-icon>
+        <n-icon :size="16"><KeyIcon /></n-icon>
         <span class="label">OTP 验证码</span>
         <span class="count" v-if="otpCount">{{ otpCount }}</span>
       </div>
@@ -241,7 +239,7 @@ async function removeTag(tag: { id: string; name: string }) {
         :class="{ active: view === 'templates' }"
         @click="emit('view', 'templates')"
       >
-        <n-icon :size="16"><AlbumsOutline /></n-icon>
+        <n-icon :size="16"><AlbumsIcon /></n-icon>
         <span class="label">模板库</span>
         <span class="count" v-if="store.templates.length">{{ store.templates.length }}</span>
       </div>
@@ -250,7 +248,7 @@ async function removeTag(tag: { id: string; name: string }) {
         :class="{ active: view === 'trash' }"
         @click="emit('view', 'trash')"
       >
-        <n-icon :size="16"><TrashOutline /></n-icon>
+        <n-icon :size="16"><TrashIcon /></n-icon>
         <span class="label">回收站</span>
         <span class="count" v-if="trashCount">{{ trashCount }}</span>
       </div>

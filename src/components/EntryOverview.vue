@@ -2,8 +2,7 @@
 import { computed } from "vue";
 import { useAppStore } from "../stores/app";
 import { NIcon } from "naive-ui";
-import { TrashOutline } from "@vicons/ionicons5";
-import { templateIcon } from "../utils/templateIcons";
+import { templateIcon, uiIcon } from "../utils/templateIcons";
 
 const emit = defineEmits<{
   (e: "category", cat: string | null): void;
@@ -12,6 +11,7 @@ const emit = defineEmits<{
 }>();
 
 const store = useAppStore();
+const TrashIcon = uiIcon("trash");
 
 const totalActive = computed(() => store.activeEntries.length);
 const trashCount = computed(() => store.trashedEntries.length);
@@ -49,7 +49,7 @@ const hasTagStats = computed(() => store.tagStats.length > 0);
       <div class="stat-card clickable" @click="emit('view', 'trash')">
         <div class="stat-num">{{ trashCount }}</div>
         <div class="stat-label">
-          <n-icon :size="14"><TrashOutline /></n-icon>
+          <n-icon :size="14"><TrashIcon /></n-icon>
           回收站
         </div>
       </div>

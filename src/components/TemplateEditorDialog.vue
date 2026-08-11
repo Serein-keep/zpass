@@ -8,12 +8,7 @@ import {
   NSelect,
   useMessage,
 } from "naive-ui";
-import {
-  AddOutline,
-  CloseOutline,
-  ChevronUpOutline,
-  ChevronDownOutline,
-} from "@vicons/ionicons5";
+import { uiIcon } from "../utils/templateIcons";
 import { useAppStore } from "../stores/app";
 import type { Template, TemplateFieldInput } from "../types";
 import { FIELD_TYPE_OPTIONS, DEFAULT_TEMPLATE_FIELDS } from "../types";
@@ -30,6 +25,11 @@ const emit = defineEmits<{
 
 const store = useAppStore();
 const message = useMessage();
+
+const AddIcon = uiIcon("add");
+const CloseIcon = uiIcon("close");
+const ChevronUpIcon = uiIcon("chevron-up");
+const ChevronDownIcon = uiIcon("chevron-down");
 
 const name = ref("");
 const categoryId = ref<string | null>(null);
@@ -187,17 +187,17 @@ watch(
           敏感
         </label>
         <n-button text size="tiny" @click="moveField(idx, -1)">
-          <template #icon><n-icon><ChevronUpOutline /></n-icon></template>
+          <template #icon><n-icon><ChevronUpIcon /></n-icon></template>
         </n-button>
         <n-button text size="tiny" @click="moveField(idx, 1)">
-          <template #icon><n-icon><ChevronDownOutline /></n-icon></template>
+          <template #icon><n-icon><ChevronDownIcon /></n-icon></template>
         </n-button>
         <n-button text type="error" size="tiny" @click="removeField(idx)">
-          <template #icon><n-icon><CloseOutline /></n-icon></template>
+          <template #icon><n-icon><CloseIcon /></n-icon></template>
         </n-button>
       </div>
       <n-button dashed size="small" @click="addField">
-        <template #icon><n-icon><AddOutline /></n-icon></template>
+        <template #icon><n-icon><AddIcon /></n-icon></template>
         添加字段
       </n-button>
 

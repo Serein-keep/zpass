@@ -52,14 +52,6 @@ impl DbState {
                 PRIMARY KEY (entry_id, tag_id)
             );
 
-            CREATE TABLE IF NOT EXISTS custom_fields (
-                id TEXT PRIMARY KEY,
-                entry_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                value_encrypted TEXT NOT NULL,
-                sort_order INTEGER DEFAULT 0
-            );
-
             CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
@@ -73,13 +65,6 @@ impl DbState {
                 interval INTEGER NOT NULL DEFAULT 30,
                 digits INTEGER NOT NULL DEFAULT 6,
                 algorithm TEXT NOT NULL DEFAULT 'SHA1',
-                created_at TEXT NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS template_categories (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
-                icon TEXT,
                 created_at TEXT NOT NULL
             );
 
@@ -144,7 +129,7 @@ impl DbState {
                 .map_err(|e| format!("迁移 entries.template_id 失败: {}", e))?;
         }
 
-        // 迁移：templates 表补充 icon/note 列、template_categories 表补充 icon 列（旧版本无此列）
+        // 迁移：templates 表补充 icon/note 列（旧版本无此列）
         let table_cols = |table: &str| -> Result<Vec<String>, String> {
             let cols = conn
                 .prepare(&format!("PRAGMA table_info({})", table))
@@ -164,10 +149,28 @@ impl DbState {
             conn.execute_batch("ALTER TABLE templates ADD COLUMN note TEXT;")
                 .map_err(|e| format!("迁移 templates.note 失败: {}", e))?;
         }
-        let cat_cols = table_cols("template_categories")?;
-        if !cat_cols.contains(&"icon".to_string()) {
-            conn.execute_batch("ALTER TABLE template_categories ADD COLUMN icon TEXT;")
-                .map_err(|e| format!("迁移 template_categories.icon 失败: {}", e))?;
+
+        // 迁移：旧库中遗留的废弃表（custom_fields 从未写入；template_categories 数据已并入 categories）
+        let legacy_table_exists = |table: &str| -> Result<bool, String> {
+            conn.query_row(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1",
+                params![table],
+                |r| r.get::<usize, i64>(0),
+            )
+            .map(|c| c > 0)
+            .map_err(|e| e.to_string())
+        };
+        if legacy_table_exists("template_categories")? {
+            conn.execute_batch(
+                "INSERT OR IGNORE INTO categories (id, parent_id, name, icon, color, sort_order, created_at)
+                 SELECT id, NULL, name, icon, NULL, 100, created_at FROM template_categories WHERE id NOT IN ('cat-builtin');
+                 DROP TABLE template_categories;",
+            )
+            .map_err(|e| format!("迁移 template_categories 失败: {}", e))?;
+        }
+        if legacy_table_exists("custom_fields")? {
+            conn.execute_batch("DROP TABLE custom_fields;")
+                .map_err(|e| format!("清理 custom_fields 失败: {}", e))?;
         }
 
         self.seed_builtin_templates(&conn)?;
@@ -206,13 +209,6 @@ impl DbState {
             )
             .map_err(|e| format!("初始化类别失败: {}", e))?;
         }
-
-        // 迁移旧模板类别：template_categories 的行复制到 categories（保留 id），模板分类即主类别
-        conn.execute(
-            "INSERT OR IGNORE INTO categories (id, parent_id, name, icon, color, sort_order, created_at) SELECT id, NULL, name, icon, NULL, 100, created_at FROM template_categories WHERE id NOT IN ('cat-builtin')",
-            [],
-        )
-        .map_err(|e| format!("迁移模板类别失败: {}", e))?;
 
         // 内置模板（category_id 指向内置类别）
         let templates: Vec<(&str, &str, &str, &str, &str)> = vec![

@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { NButton, NIcon, NSelect, NEmpty, useDialog, useMessage } from "naive-ui";
-import {
-  AddOutline,
-  CreateOutline,
-  TrashOutline,
-} from "@vicons/ionicons5";
 import { useAppStore } from "../stores/app";
 import type { Template } from "../types";
-import { templateIcon } from "../utils/templateIcons";
+import { templateIcon, uiIcon } from "../utils/templateIcons";
 
 const emit = defineEmits<{
   (e: "edit", template: Template): void;
@@ -18,6 +13,10 @@ const emit = defineEmits<{
 const store = useAppStore();
 const dialog = useDialog();
 const message = useMessage();
+
+const AddIcon = uiIcon("add");
+const CreateIcon = uiIcon("create");
+const TrashIcon = uiIcon("trash");
 
 const catFilter = ref<string>("all");
 
@@ -61,7 +60,7 @@ function remove(t: Template) {
       />
       <div class="spacer" />
       <n-button quaternary @click="emit('create')">
-        <template #icon><n-icon><AddOutline /></n-icon></template>
+        <template #icon><n-icon><AddIcon /></n-icon></template>
         新建模板
       </n-button>
     </div>
@@ -94,10 +93,10 @@ function remove(t: Template) {
             </div>
           <div class="card-actions" v-if="!t.is_builtin">
             <n-button text size="small" @click="emit('edit', t)">
-                <template #icon><n-icon :size="14"><CreateOutline /></n-icon></template>
+                <template #icon><n-icon :size="14"><CreateIcon /></n-icon></template>
               </n-button>
               <n-button text size="small" type="error" @click="remove(t)">
-                <template #icon><n-icon :size="14"><TrashOutline /></n-icon></template>
+                <template #icon><n-icon :size="14"><TrashIcon /></n-icon></template>
               </n-button>
             </div>
           </div>

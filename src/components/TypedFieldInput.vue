@@ -99,7 +99,7 @@ function inputTypeAttr(type: string): string {
   padding: 9px 12px;
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: var(--bg);
+  background: var(--panel);
   color: var(--text);
   font-size: 14px;
   outline: none;

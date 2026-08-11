@@ -12,18 +12,18 @@ import {
   useMessage,
   useDialog,
 } from "naive-ui";
-import {
-  AddOutline,
-  TrashOutline,
-  CameraOutline,
-  FolderOpenOutline,
-  ImageOutline,
-  CreateOutline,
-} from "@vicons/ionicons5";
+import { uiIcon } from "../utils/templateIcons";
 
 const store = useAppStore();
 const message = useMessage();
 const dialog = useDialog();
+
+const AddIcon = uiIcon("add");
+const TrashIcon = uiIcon("trash");
+const CameraIcon = uiIcon("camera");
+const FolderIcon = uiIcon("folder-open");
+const ImageIcon = uiIcon("image");
+const CreateIcon = uiIcon("create");
 
 const showAddModal = ref(false);
 const showImportModal = ref(false);
@@ -354,19 +354,19 @@ async function importFromFile() {
       <span class="h-title">OTP 验证码</span>
       <div class="spacer" />
       <n-button size="small" quaternary @click="captureQrCode">
-        <template #icon><n-icon><CameraOutline /></n-icon></template>
+        <template #icon><n-icon><CameraIcon /></n-icon></template>
         截图扫码
       </n-button>
       <n-button size="small" quaternary @click="uploadQrImage">
-        <template #icon><n-icon><ImageOutline /></n-icon></template>
+        <template #icon><n-icon><ImageIcon /></n-icon></template>
         上传二维码
       </n-button>
       <n-button size="small" quaternary @click="openImportModal">
-        <template #icon><n-icon><FolderOpenOutline /></n-icon></template>
+        <template #icon><n-icon><FolderIcon /></n-icon></template>
         导入
       </n-button>
       <n-button size="small" quaternary @click="showAddModal = true">
-        <template #icon><n-icon><AddOutline /></n-icon></template>
+        <template #icon><n-icon><AddIcon /></n-icon></template>
         添加
       </n-button>
     </div>
@@ -391,10 +391,10 @@ async function importFromFile() {
             </div>
             <div class="otp-actions">
               <n-button text size="tiny" @click.stop="editEntry(entry)">
-                <template #icon><n-icon :size="14"><CreateOutline /></n-icon></template>
+                <template #icon><n-icon :size="14"><CreateIcon /></n-icon></template>
               </n-button>
               <n-button text size="tiny" type="error" @click.stop="deleteEntry(entry)">
-                <template #icon><n-icon :size="14"><TrashOutline /></n-icon></template>
+                <template #icon><n-icon :size="14"><TrashIcon /></n-icon></template>
               </n-button>
             </div>
           </div>

@@ -152,45 +152,6 @@ pub struct Settings {
     pub storage_path: String,
 }
 
-/// 各分类的默认字段模板（前端同步维护，此处保留供后端扩展使用）
-#[allow(dead_code)]
-pub fn default_fields_for(category: &str) -> Vec<Field> {
-    fn field(name: &str, secret: bool) -> Field {
-        Field {
-            name: name.into(),
-            value: String::new(),
-            secret,
-            field_type: "text".into(),
-        }
-    }
-    match category {
-        "login" => vec![
-            field("URL", false),
-            field("用户名", false),
-            field("密码", true),
-            field("TOTP密钥", false),
-        ],
-        "database" => vec![
-            field("主机", false),
-            field("端口", false),
-            field("数据库名", false),
-            field("用户名", false),
-            field("密码", true),
-        ],
-        "email" => vec![
-            field("邮箱地址", false),
-            field("密码", true),
-            field("SMTP服务器", false),
-            field("端口", false),
-        ],
-        "custom" => vec![
-            field("用户", false),
-            field("密码", true),
-        ],
-        _ => vec![],
-    }
-}
-
 /// OTP 条目输入
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OtpEntryInput {

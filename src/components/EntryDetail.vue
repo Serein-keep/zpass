@@ -3,23 +3,11 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import type { Entry, EntryInput, Field } from "../types";
 import { DEFAULT_TEMPLATE_FIELDS } from "../types";
 import { useAppStore } from "../stores/app";
-import { templateIcon } from "../utils/templateIcons";
+import { templateIcon, uiIcon } from "../utils/templateIcons";
 import { NButton, NInput, NSelect, NIcon, useMessage, useDialog } from "naive-ui";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import TypedFieldInput from "./TypedFieldInput.vue";
 import FieldConfigDialog from "./FieldConfigDialog.vue";
-import {
-  CloseOutline,
-  EyeOutline,
-  EyeOffOutline,
-  CopyOutline,
-  CreateOutline,
-  TrashOutline,
-  RefreshOutline,
-  AddOutline,
-  RemoveOutline,
-  OpenOutline,
-} from "@vicons/ionicons5";
 
 const props = defineProps<{
   entry: Entry | null;
@@ -34,6 +22,17 @@ const emit = defineEmits<{
 const store = useAppStore();
 const message = useMessage();
 const dialog = useDialog();
+
+const CloseIcon = uiIcon("close");
+const EyeIcon = uiIcon("eye");
+const EyeOffIcon = uiIcon("eye-off");
+const CopyIcon = uiIcon("copy");
+const CreateIcon = uiIcon("create");
+const TrashIcon = uiIcon("trash");
+const RefreshIcon = uiIcon("refresh");
+const AddIcon = uiIcon("add");
+const RemoveIcon = uiIcon("remove");
+const OpenIcon = uiIcon("open");
 
 const category = ref<string>("login");
 const title = ref("");
@@ -200,16 +199,16 @@ function fieldsFromTemplate(t: { fields: { name: string; field_type: string; sec
 
 function resetForm() {
   if (props.isNew) {
-    category.value = "login";
+    const tpl =
+      store.templateById(props.initialTemplateId) ||
+      store.templateById(store.templates[0]?.id);
+    category.value = tpl?.category_id ?? "login";
     title.value = "";
     icon.value = null;
     note.value = null;
     selectedTags.value = [];
     selectedOtpId.value = null;
     otpMode.value = null;
-    const tpl =
-      store.templateById(props.initialTemplateId) ||
-      store.templateById(store.templates[0]?.id);
     fields.value = tpl ? fieldsFromTemplate(tpl) : (DEFAULT_TEMPLATE_FIELDS as Field[]);
   } else if (props.entry) {
     const e = props.entry;
@@ -409,19 +408,19 @@ watch(
       </template>
       <div class="spacer" />
       <n-button v-if="!isNew && !editing" size="small" quaternary @click="editing = true">
-        <template #icon><n-icon><CreateOutline /></n-icon></template>
+        <template #icon><n-icon><CreateIcon /></n-icon></template>
       </n-button>
       <n-button v-if="!isNew && entry?.deleted_at" size="small" quaternary type="warning" @click="restore">
-        <template #icon><n-icon><RefreshOutline /></n-icon></template>
+        <template #icon><n-icon><RefreshIcon /></n-icon></template>
       </n-button>
       <n-button v-if="!isNew && entry?.deleted_at" size="small" quaternary type="error" @click="permanentDelete">
-        <template #icon><n-icon><RemoveOutline /></n-icon></template>
+        <template #icon><n-icon><RemoveIcon /></n-icon></template>
       </n-button>
       <n-button v-if="!isNew && !entry?.deleted_at && !editing" size="small" quaternary type="error" @click="toTrash">
-        <template #icon><n-icon><TrashOutline /></n-icon></template>
+        <template #icon><n-icon><TrashIcon /></n-icon></template>
       </n-button>
       <n-button size="small" quaternary @click="emit('close')">
-        <template #icon><n-icon><CloseOutline /></n-icon></template>
+        <template #icon><n-icon><CloseIcon /></n-icon></template>
       </n-button>
     </div>
 
@@ -444,13 +443,13 @@ watch(
           </div>
           <div class="f-actions">
             <n-button v-if="f.field_type === 'url' && f.value" text size="tiny" @click="openExternal(f.value)">
-              <template #icon><n-icon :size="14"><OpenOutline /></n-icon></template>
+              <template #icon><n-icon :size="14"><OpenIcon /></n-icon></template>
             </n-button>
             <n-button v-if="f.secret" text size="tiny" @click="reveal[idx] = !reveal[idx]">
-              <template #icon><n-icon :size="14"><component :is="reveal[idx] ? EyeOffOutline : EyeOutline" /></n-icon></template>
+              <template #icon><n-icon :size="14"><component :is="reveal[idx] ? EyeOffIcon : EyeIcon" /></n-icon></template>
             </n-button>
             <n-button v-if="f.value" text size="tiny" @click="copyValue(f.value)">
-              <template #icon><n-icon :size="14"><CopyOutline /></n-icon></template>
+              <template #icon><n-icon :size="14"><CopyIcon /></n-icon></template>
             </n-button>
           </div>
         </div>
@@ -464,7 +463,7 @@ watch(
           </div>
           <div class="f-actions">
             <n-button text size="tiny" @click="copyToClipboard(otpCode)">
-              <template #icon><n-icon :size="14"><CopyOutline /></n-icon></template>
+              <template #icon><n-icon :size="14"><CopyIcon /></n-icon></template>
             </n-button>
           </div>
         </div>
@@ -478,10 +477,10 @@ watch(
           </div>
           <div class="f-actions">
             <n-button text size="tiny" @click="revealCombined = !revealCombined">
-              <template #icon><n-icon :size="14"><component :is="revealCombined ? EyeOffOutline : EyeOutline" /></n-icon></template>
+              <template #icon><n-icon :size="14"><component :is="revealCombined ? EyeOffIcon : EyeIcon" /></n-icon></template>
             </n-button>
             <n-button text size="tiny" @click="copyToClipboard(combinedCode)">
-              <template #icon><n-icon :size="14"><CopyOutline /></n-icon></template>
+              <template #icon><n-icon :size="14"><CopyIcon /></n-icon></template>
             </n-button>
           </div>
         </div>
@@ -535,16 +534,18 @@ watch(
               class="f-val-input"
             />
             <n-button v-if="f.field_type === 'password'" text size="tiny" @click="reveal[idx] = !reveal[idx]">
-              <template #icon><n-icon :size="14"><component :is="reveal[idx] ? EyeOffOutline : EyeOutline" /></n-icon></template>
+              <template #icon><n-icon :size="14"><component :is="reveal[idx] ? EyeOffIcon : EyeIcon" /></n-icon></template>
             </n-button>
             <n-button text type="error" size="tiny" @click="removeField(idx)">
-              <template #icon><n-icon><CloseOutline /></n-icon></template>
+              <template #icon><n-icon><CloseIcon /></n-icon></template>
             </n-button>
           </div>
-          <n-button dashed size="small" @click="addField">
-            <template #icon><n-icon><AddOutline /></n-icon></template>
-            添加字段
-          </n-button>
+          <div class="add-field-row">
+            <n-button dashed size="small" @click="addField">
+              <template #icon><n-icon><AddIcon /></n-icon></template>
+              添加字段
+            </n-button>
+          </div>
         </div>
 
         <div class="form-row" style="margin-top: 16px">
@@ -798,6 +799,11 @@ watch(
 }
 .f-val-input {
   flex: 1;
+}
+.add-field-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
 }
 .footer {
   display: flex;

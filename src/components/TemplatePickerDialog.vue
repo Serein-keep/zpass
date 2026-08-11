@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { NButton, NIcon, NModal, NInput } from "naive-ui";
-import { AlbumsOutline } from "@vicons/ionicons5";
+import { ref, computed, watch, h } from "vue";
+import type { TreeOption } from "naive-ui";
+import { NButton, NIcon, NModal, NInput, NTree } from "naive-ui";
+import { templateIcon, uiIcon } from "../utils/templateIcons";
 import { useAppStore } from "../stores/app";
 
 const props = defineProps<{ show: boolean }>();
@@ -13,23 +14,123 @@ const emit = defineEmits<{
 
 const store = useAppStore();
 const search = ref("");
+const ChevronIcon = uiIcon("chevron-down");
 
-const groups = computed(() => {
-  const q = search.value.trim().toLowerCase();
-  const filtered = store.templates.filter(
-    (t) => !q || t.name.toLowerCase().includes(q)
-  );
-  const map = new Map<string, typeof filtered>();
-  for (const t of filtered) {
-    const key = t.category_name || "未分类";
-    if (!map.has(key)) map.set(key, []);
-    map.get(key)!.push(t);
+interface PickNode extends TreeOption {
+  isTemplate: boolean;
+  templateId?: string;
+  fieldCount?: number;
+  templateCount?: number;
+  iconKey?: string | null;
+  color?: string | null;
+}
+
+const q = computed(() => search.value.trim().toLowerCase());
+const filteredTemplates = computed(() =>
+  q.value
+    ? store.templates.filter((t) => t.name.toLowerCase().includes(q.value))
+    : store.templates
+);
+
+function catColor(catId: string): string | null {
+  return store.categories.find((c) => c.id === catId)?.color ?? null;
+}
+
+function templatesOf(catId: string): PickNode[] {
+  const color = catColor(catId);
+  return filteredTemplates.value
+    .filter((t) => t.category_id === catId)
+    .map((t) => ({
+      key: "tmpl-" + t.id,
+      label: t.name,
+      isTemplate: true,
+      templateId: t.id,
+      fieldCount: t.fields.length,
+      iconKey: t.icon,
+      color,
+    }));
+}
+
+function buildCats(parentId: string | null): PickNode[] {
+  const out: PickNode[] = [];
+  for (const c of store.categories.filter((x) => (x.parent_id ?? null) === parentId)) {
+    const children = [...buildCats(c.id), ...templatesOf(c.id)];
+    if (children.length === 0) continue;
+    out.push({
+      key: "cat-" + c.id,
+      label: c.name,
+      isTemplate: false,
+      iconKey: c.icon,
+      color: c.color,
+      templateCount: children.filter((n) => n.isTemplate).length,
+      children,
+    });
   }
-  return Array.from(map.entries());
-});
+  return out;
+}
 
-function pick(id: string) {
-  emit("select", id);
+const treeData = computed(() => buildCats(null));
+
+const expandedKeys = ref<string[]>([]);
+watch(
+  treeData,
+  (nodes) => {
+    const keys: string[] = [];
+    const walk = (list: PickNode[]) => {
+      for (const n of list) {
+        if (n.children?.length) {
+          keys.push(n.key as string);
+          walk(n.children as PickNode[]);
+        }
+      }
+    };
+    walk(nodes);
+    expandedKeys.value = keys;
+  },
+  { immediate: true }
+);
+
+function renderSwitcher({ expanded }: { expanded: boolean }) {
+  return h(ChevronIcon, {
+    style: {
+      transform: expanded ? "rotate(-90deg)" : "rotate(0deg)",
+      transition: "transform 0.2s",
+      color: "var(--text-sub)",
+    },
+  });
+}
+
+function renderLabel({ option }: { option: TreeOption }) {
+  const o = option as PickNode;
+  return h(
+    "span",
+    { class: o.isTemplate ? "pick-node tmpl" : "pick-node cat" },
+    [
+      h(
+        NIcon,
+        {
+          size: o.isTemplate ? 15 : 17,
+          color: o.color ?? "var(--text-sub)",
+        },
+        { default: () => h(templateIcon(o.iconKey)) }
+      ),
+      h("span", { class: "pick-label" }, o.label),
+    ]
+  );
+}
+
+function renderSuffix({ option }: { option: TreeOption }) {
+  const o = option as PickNode;
+  if (o.isTemplate) {
+    return h("span", { class: "badge" }, `${o.fieldCount} 字段`);
+  }
+  return h("span", { class: "count" }, `${o.templateCount}`);
+}
+
+function onSelect(keys: Array<string | number>) {
+  const key = keys[0];
+  if (typeof key !== "string" || !key.startsWith("tmpl-")) return;
+  emit("select", key.slice(5));
   emit("update:show", false);
 }
 </script>
@@ -39,7 +140,7 @@ function pick(id: string) {
     :show="props.show"
     preset="card"
     title="选择模板"
-    style="width: 480px"
+    style="width: 460px"
     @update:show="emit('update:show', $event)"
   >
     <div class="picker">
@@ -62,21 +163,22 @@ function pick(id: string) {
           前往模板库
         </n-button>
       </div>
-      <div v-else-if="groups.length === 0" class="empty">未找到匹配的模板</div>
-      <div v-else class="groups">
-        <div v-for="[cat, items] in groups" :key="cat" class="group">
-          <div class="g-title">{{ cat }}</div>
-          <div
-            v-for="t in items"
-            :key="t.id"
-            class="tmpl-item"
-            @click="pick(t.id)"
-          >
-            <n-icon :size="16"><AlbumsOutline /></n-icon>
-            <span class="tmpl-name">{{ t.name }}</span>
-            <span class="tmpl-count">{{ t.fields.length }} 字段</span>
-          </div>
-        </div>
+      <div v-else-if="treeData.length === 0" class="empty">
+        未找到匹配的模板
+      </div>
+      <div v-else class="tree-wrap">
+        <n-tree
+          class="pick-tree"
+          :data="treeData"
+          :expanded-keys="expandedKeys"
+          :indent="18"
+          :render-switcher-icon="renderSwitcher"
+          :render-label="renderLabel"
+          :render-suffix="renderSuffix"
+          :node-props="() => ({ class: 'pick-node-row' })"
+          @update:expanded-keys="(k) => (expandedKeys = k as string[])"
+          @update:selected-keys="onSelect"
+        />
       </div>
     </div>
   </n-modal>
@@ -105,45 +207,105 @@ function pick(id: string) {
   text-align: center;
   padding: 40px 0;
 }
-.groups {
+.tree-wrap {
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+/*
+ * render-label / render-suffix 返回的元素由 naive-ui NTree 内部创建，
+ * 不带本组件 scoped 属性，必须通过 :deep() 从模板根元素 .pick-tree 穿透选择。
+ */
+.pick-tree :deep(.n-tree-node) {
+  border-radius: 8px;
+}
+.pick-tree :deep(.n-tree-node-content) {
+  padding: 0 6px;
+  min-height: 32px;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  width: 100%;
 }
-.group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.g-title {
-  font-size: 12px;
-  color: var(--text-sub);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 2px 4px;
-}
-.tmpl-item {
+.pick-tree :deep(.n-tree-node-content__text) {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
+  flex-grow: 1;
+  min-width: 0;
+}
+.pick-tree :deep(.n-tree-node-content__suffix) {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  padding-left: 8px;
+}
+.pick-tree :deep(.n-tree-node-wrapper) {
+  padding: 1px 0;
+}
+.pick-tree :deep(.n-tree-node-switcher) {
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pick-tree :deep(.n-tree-node-switcher svg) {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+.pick-tree :deep(.n-tree-node:not(.n-tree-node--selected):hover) {
+  background: var(--sidebar);
+}
+
+.pick-tree :deep(.pick-node) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1;
+}
+.pick-tree :deep(.pick-node svg) {
+  display: block;
+  flex-shrink: 0;
+}
+.pick-tree :deep(.pick-node.cat) {
+  font-weight: 600;
   color: var(--text);
-  transition: background 0.15s;
+}
+.pick-tree :deep(.pick-node.tmpl) {
+  font-weight: 400;
+  color: var(--text);
+}
+.pick-tree :deep(.pick-label) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pick-tree :deep(.badge) {
+  font-size: 11px;
+  color: var(--text-sub);
+  opacity: 0.75;
+  background: var(--sidebar);
   border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  line-height: 1.2;
 }
-.tmpl-item:hover {
-  background: var(--panel);
-  border-color: var(--primary);
-}
-.tmpl-name {
-  flex: 1;
-}
-.tmpl-count {
+.pick-tree :deep(.count) {
   font-size: 12px;
   color: var(--text-sub);
+  opacity: 0.75;
+  background: var(--sidebar);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 </style>

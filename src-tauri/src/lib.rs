@@ -9,6 +9,10 @@ use std::time::Duration;
 use tauri::window::Color;
 use tauri::{Emitter, Listener, Manager};
 
+const LOCK_CHECK_INTERVAL: Duration = Duration::from_secs(2);
+const LOCKED_SLEEP_INTERVAL: Duration = Duration::from_secs(30);
+const FORCE_SHOW_TIMEOUT: Duration = Duration::from_secs(8);
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // 数据库路径：优先使用设置中指定的 storage_path，否则用默认
@@ -49,8 +53,10 @@ pub fn run() {
             commands::delete_otp_entry,
             commands::update_otp_entry,
             commands::import_otp_entries,
+            #[cfg(feature = "qr-scan")]
             commands::capture_qr_code,
             commands::read_file_text,
+            #[cfg(feature = "qr-scan")]
             commands::decode_qr_image,
             commands::list_categories,
             commands::create_category,
@@ -72,33 +78,35 @@ pub fn run() {
                 let _ = app.listen("app-ready", move |_| {
                     let _ = win.show();
                 });
-                // 兜底：若前端事件丢失，8 秒后强制显示，避免窗口永不出现
+                // 兜底：若前端事件丢失，定时后强制显示，避免窗口永不出现
                 let win2 = window.clone();
                 std::thread::spawn(move || {
-                    std::thread::sleep(Duration::from_secs(8));
+                    std::thread::sleep(FORCE_SHOW_TIMEOUT);
                     let _ = win2.show();
                 });
             }
-            // 自动锁屏定时器：每 2 秒检查一次活动时间
+            // 自动锁屏定时器：已解锁时每 2 秒检查活动时间；已锁屏时休眠等待，解锁时被 notify 唤醒
             let handle = app.handle().clone();
             std::thread::spawn(move || loop {
-                std::thread::sleep(Duration::from_secs(2));
                 let state = handle.state::<AppState>();
-                // 若已锁定则无需处理
-                if state.get_key().is_none() {
-                    continue;
-                }
-                let settings = commands::get_settings(state.clone()).unwrap_or(models::Settings {
-                    lock_timeout: 30,
-                    theme: "light".into(),
-                    storage_path: String::new(),
-                });
-                let elapsed = state::now_secs().saturating_sub(state.get_last_activity());
-                if elapsed >= settings.lock_timeout {
-                    state.clear_key();
-                    // 通知前端锁屏
-                    let _ = handle.emit("app-locked", ());
-                }
+                let interval = if state.get_key().is_some() {
+                    let settings = commands::get_settings(state.clone()).unwrap_or(models::Settings {
+                        lock_timeout: 30,
+                        theme: "light".into(),
+                        storage_path: String::new(),
+                    });
+                    let elapsed = state::now_secs().saturating_sub(state.get_last_activity());
+                    if elapsed >= settings.lock_timeout {
+                        state.clear_key();
+                        let _ = handle.emit("app-locked", ());
+                    }
+                    LOCK_CHECK_INTERVAL
+                } else {
+                    LOCKED_SLEEP_INTERVAL
+                };
+                let (mtx, cvar) = &state.lock_timer;
+                let _guard = mtx.lock().unwrap();
+                let _ = cvar.wait_timeout(_guard, interval);
             });
             Ok(())
         })

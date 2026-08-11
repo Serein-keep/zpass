@@ -1,6 +1,6 @@
 use crate::crypto::CryptoKey;
 use crate::db::DbState;
-use std::sync::Mutex;
+use std::sync::{Condvar, Mutex};
 
 /// 全局应用状态：包含数据库连接与（内存中的）加密密钥
 pub struct AppState {
@@ -9,6 +9,8 @@ pub struct AppState {
     pub crypto_key: Mutex<Option<CryptoKey>>,
     /// 上次活动时间（UNIX 秒），用于自动锁屏
     pub last_activity: Mutex<u64>,
+    /// 锁屏定时器休眠等待；解锁时 notify 立即唤醒以恢复检查
+    pub lock_timer: (Mutex<()>, Condvar),
 }
 
 impl AppState {
@@ -17,6 +19,7 @@ impl AppState {
             db,
             crypto_key: Mutex::new(None),
             last_activity: Mutex::new(now_secs()),
+            lock_timer: (Mutex::new(()), Condvar::new()),
         }
     }
 
@@ -24,6 +27,7 @@ impl AppState {
     pub fn set_key(&self, key: CryptoKey) {
         *self.crypto_key.lock().unwrap() = Some(key);
         self.touch();
+        self.lock_timer.1.notify_all();
     }
 
     /// 清除密钥（锁屏）

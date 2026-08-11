@@ -10,17 +10,17 @@ import {
   NInput,
   useMessage,
 } from "naive-ui";
-import {
-  CopyOutline,
-  RefreshOutline,
-  ChevronDownOutline,
-  ChevronForwardOutline,
-} from "@vicons/ionicons5";
+import { uiIcon } from "../utils/templateIcons";
 
 const props = defineProps<{ show: boolean }>();
 const emit = defineEmits<{ (e: "update:show", v: boolean): void }>();
 
 const message = useMessage();
+
+const CopyIcon = uiIcon("copy");
+const RefreshIcon = uiIcon("refresh");
+const ChevronDownIcon = uiIcon("chevron-down");
+const ChevronForwardIcon = uiIcon("chevron-forward");
 
 const LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
 const UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -150,10 +150,10 @@ watch(
       <div class="pw-value" @click="copyPassword">{{ password }}</div>
       <div class="pw-actions">
         <n-button text size="tiny" @click="copyPassword">
-          <template #icon><n-icon :size="16"><CopyOutline /></n-icon></template>
+          <template #icon><n-icon :size="16"><CopyIcon /></n-icon></template>
         </n-button>
         <n-button text size="tiny" @click="generate">
-          <template #icon><n-icon :size="16"><RefreshOutline /></n-icon></template>
+          <template #icon><n-icon :size="16"><RefreshIcon /></n-icon></template>
         </n-button>
       </div>
     </div>
@@ -180,7 +180,7 @@ watch(
     <div class="more-toggle" @click="moreOpen = !moreOpen">
       <span>更多选项</span>
       <n-icon :size="14">
-        <component :is="moreOpen ? ChevronDownOutline : ChevronForwardOutline" />
+        <component :is="moreOpen ? ChevronDownIcon : ChevronForwardIcon" />
       </n-icon>
     </div>
 

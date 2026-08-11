@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAppStore } from "../stores/app";
 import { NButton, NIcon, useMessage } from "naive-ui";
-import { LockClosedOutline, SettingsOutline, AddOutline, KeyOutline } from "@vicons/ionicons5";
+import { uiIcon } from "../utils/templateIcons";
 import Sidebar from "../components/Sidebar.vue";
 import EntryList from "../components/EntryList.vue";
 import EntryDetail from "../components/EntryDetail.vue";
@@ -20,6 +20,11 @@ import type { Template, Category } from "../types";
 const router = useRouter();
 const store = useAppStore();
 const message = useMessage();
+
+const LockIcon = uiIcon("lock-closed");
+const SettingsIcon = uiIcon("settings");
+const AddIcon = uiIcon("add");
+const KeyIcon = uiIcon("key");
 
 const selectedId = ref<string | null>(null);
 const view = ref<"all" | "trash" | "otp" | "templates">("all");
@@ -195,19 +200,19 @@ onMounted(() => {
         />
         <div class="spacer" />
         <n-button quaternary @click="newEntry">
-          <template #icon><n-icon><AddOutline /></n-icon></template>
+          <template #icon><n-icon><AddIcon /></n-icon></template>
           新建
         </n-button>
         <n-button quaternary @click="lockNow">
-          <template #icon><n-icon><LockClosedOutline /></n-icon></template>
+          <template #icon><n-icon><LockIcon /></n-icon></template>
           锁定
         </n-button>
         <n-button quaternary @click="showGenerator = true">
-          <template #icon><n-icon><KeyOutline /></n-icon></template>
+          <template #icon><n-icon><KeyIcon /></n-icon></template>
           生成
         </n-button>
         <n-button quaternary @click="goSettings">
-          <template #icon><n-icon><SettingsOutline /></n-icon></template>
+          <template #icon><n-icon><SettingsIcon /></n-icon></template>
           设置
         </n-button>
       </div>
