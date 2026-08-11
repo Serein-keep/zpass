@@ -57,8 +57,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
+          node-version: 22
 
       - name: Install Linux dependencies
         if: matrix.platform == 'ubuntu-22.04'
