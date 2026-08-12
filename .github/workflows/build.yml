@@ -19,8 +19,6 @@ jobs:
             target: x86_64-pc-windows-msvc
           - platform: macos-latest
             target: aarch64-apple-darwin
-          - platform: macos-13
-            target: x86_64-apple-darwin
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
 
@@ -77,8 +75,6 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          releaseId: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.run_id || '' }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
