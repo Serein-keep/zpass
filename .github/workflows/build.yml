@@ -71,6 +71,9 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
+      - name: Clean old bundles
+        run: rm -rf src-tauri/target/release/bundle
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
